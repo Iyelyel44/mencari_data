@@ -22,7 +22,7 @@ if uploaded_file:
         
         st.write("---")
         st.subheader(f"Data dari sheet '{selected_sheet}':")
-        st.dataframe(df.head())
+        st.dataframe(df)
 
         # --- Bagian Pencarian Data ---
         st.write("---")
@@ -74,3 +74,4 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Terjadi kesalahan saat membaca file: {e}")
+
