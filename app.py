@@ -22,31 +22,53 @@ if uploaded_file:
         
         st.write("---")
         st.subheader(f"Data dari sheet '{selected_sheet}':")
-        st.dataframe(df.head()) # Menampilkan 5 baris pertama sebagai pratinjau
+        st.dataframe(df.head())
 
         # --- Bagian Pencarian Data ---
         st.write("---")
-        st.subheader("Cari Data")
+        st.subheader("Pilihan Fungsi Excel")
         
+        # Tambahkan pilihan untuk user
+        fungsi_pilihan = st.radio(
+            "Pilih rumus yang ingin digunakan:",
+            ('INDEX MATCH', 'COUNTIF')
+        )
+        
+        st.subheader(f"Cari Data dengan {fungsi_pilihan}")
+
         # Memilih kolom untuk pencarian
         search_column = st.selectbox("Pilih kolom untuk pencarian", df.columns)
         
-        # Memilih kolom yang ingin ditampilkan hasilnya
-        result_column = st.selectbox("Pilih kolom yang ingin ditampilkan", df.columns)
+        # Logika untuk menampilkan kolom hasil hanya jika INDEX MATCH dipilih
+        if fungsi_pilihan == 'INDEX MATCH':
+            result_column = st.selectbox("Pilih kolom yang ingin ditampilkan hasilnya", df.columns)
         
         search_query = st.text_input(f"Masukkan data yang ingin dicari di kolom '{search_column}'")
 
-        if st.button("Cari"):
+        if st.button("Jalankan"):
             if search_query:
-                # Logika pencarian yang meniru INDEX MATCH
-                # Mencari baris yang cocok dengan kueri pencarian
-                hasil_pencarian = df[df[search_column].astype(str).str.contains(search_query, case=False, na=False)]
+                # --- Logika Berdasarkan Pilihan User ---
                 
-                if not hasil_pencarian.empty:
-                    st.success("Data ditemukan!")
-                    st.dataframe(hasil_pencarian[[search_column, result_column]]) # Menampilkan hasil dalam tabel
-                else:
-                    st.warning("Data tidak ditemukan. Coba kata kunci lain.")
+                if fungsi_pilihan == 'INDEX MATCH':
+                    # Logika untuk INDEX MATCH
+                    hasil_pencarian = df[df[search_column].astype(str).str.contains(search_query, case=False, na=False)]
+                    
+                    if not hasil_pencarian.empty:
+                        st.success("Data ditemukan!")
+                        st.dataframe(hasil_pencarian[[search_column, result_column]])
+                    else:
+                        st.warning("Data tidak ditemukan.")
+                
+                elif fungsi_pilihan == 'COUNTIF':
+                    # Logika untuk COUNTIF
+                    # Hitung jumlah kemunculan
+                    jumlah_data = len(df[df[search_column].astype(str).str.contains(search_query, case=False, na=False)])
+                    
+                    if jumlah_data > 0:
+                        st.success(f"Data '{search_query}' ditemukan sebanyak {jumlah_data} kali.")
+                    else:
+                        st.warning(f"Data '{search_query}' tidak ditemukan.")
+
             else:
                 st.warning("Mohon masukkan data yang ingin dicari.")
 
