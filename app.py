@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import io
 
 # Menyiapkan tampilan dasar halaman web
 st.title("Pencari Data dari File Excel")
@@ -41,7 +42,9 @@ if uploaded_file:
         
         # Logika untuk menampilkan kolom hasil hanya jika INDEX MATCH dipilih
         if fungsi_pilihan == 'INDEX MATCH':
-            result_column = st.selectbox("Pilih kolom yang ingin ditampilkan hasilnya", df.columns)
+            # Mengganti st.selectbox menjadi st.multiselect
+            # untuk memilih lebih dari satu kolom
+            result_columns = st.multiselect("Pilih kolom yang ingin ditampilkan hasilnya", df.columns)
         
         search_query = st.text_input(f"Masukkan data yang ingin dicari di kolom '{search_column}'")
 
@@ -51,13 +54,39 @@ if uploaded_file:
                 
                 if fungsi_pilihan == 'INDEX MATCH':
                     # Logika untuk INDEX MATCH
-                    hasil_pencarian = df[df[search_column].astype(str).str.contains(search_query, case=False, na=False)]
-                    
-                    if not hasil_pencarian.empty:
-                        st.success("Data ditemukan!")
-                        st.dataframe(hasil_pencarian[[search_column, result_column]])
+                    if not result_columns:
+                        st.warning("Mohon pilih setidaknya satu kolom untuk ditampilkan hasilnya.")
                     else:
-                        st.warning("Data tidak ditemukan.")
+                        hasil_pencarian = df[df[search_column].astype(str).str.contains(search_query, case=False, na=False)]
+                        
+                        if not hasil_pencarian.empty:
+                            st.success("Data ditemukan!")
+                            
+                            # Buat daftar gabungan dari kolom pencarian dan kolom hasil
+                            # Pastikan kolom pencarian tidak duplikat jika sudah ada di result_columns
+                            kolom_tampil = [search_column] + [kolom for kolom in result_columns if kolom != search_column]
+                            
+                            st.dataframe(hasil_pencarian[kolom_tampil])
+
+                            # --- Tambahan: Membuat tombol download ---
+                            st.write("---")
+                            st.subheader("Unduh Hasil Pencarian")
+                            
+                            # Simpan DataFrame ke dalam memory buffer
+                            buffer = io.BytesIO()
+                            hasil_pencarian[kolom_tampil].to_excel(buffer, index=False, sheet_name='Hasil Pencarian')
+                            buffer.seek(0)
+                            
+                            st.download_button(
+                                label="Unduh Data Excel",
+                                data=buffer,
+                                file_name='hasil_pencarian.xlsx',
+                                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                            )
+                            # --- Akhir tambahan ---
+                            
+                        else:
+                            st.warning("Data tidak ditemukan.")
                 
                 elif fungsi_pilihan == 'COUNTIF':
                     # Logika untuk COUNTIF
@@ -74,4 +103,3 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Terjadi kesalahan saat membaca file: {e}")
-
